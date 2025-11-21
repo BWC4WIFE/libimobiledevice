@@ -35,6 +35,8 @@ jobs:
             make
             pkg-config
             libtool
+            libcurl4
+          
             mingw-w64-x86_64-toolchain
             mingw-w64-x86_64-libplist
             mingw-w64-x86_64-libusbmuxd
