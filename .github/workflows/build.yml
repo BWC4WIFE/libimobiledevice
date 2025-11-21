@@ -36,7 +36,6 @@ jobs:
             mingw-w64-x86_64-libusbmuxd
             mingw-w64-x86_64-openssl
             mingw-w64-x86_64-libimobiledevice-glue
-            mingw-w64-x86_64-libtatsu
           update: true
 
       # Caching is adjusted slightly for the Windows environment, but the paths are mostly relative
