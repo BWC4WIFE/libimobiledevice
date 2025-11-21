@@ -1,7 +1,6 @@
 name: Build idevicesyslog for Windows (On-Demand)
 
 on:
-  # This block allows manual triggering from the GitHub Actions tab
   workflow_dispatch:
     inputs:
       reason:
@@ -11,19 +10,15 @@ on:
 
 jobs:
   build_idevicesyslog_windows:
-    # Use a Windows runner for the target platform
     runs-on: windows-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Setup MSYS2 environment with MinGW-w64 toolchain
       - name: Setup MSYS2
         uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW64
-          # Install basic tools (git, autotools, compiler) plus required dependencies via pacman
-          # IMPORTANT: Removed inline comments to fix pacman command failure.
           install: >
             git
             autoconf
@@ -38,7 +33,6 @@ jobs:
             mingw-w64-x86_64-libimobiledevice-glue
           update: true
 
-      # Caching is adjusted slightly for the Windows environment, but the paths are mostly relative
       - name: Cache build artifacts
         id: cache-artifacts
         uses: actions/cache@v4
@@ -50,7 +44,6 @@ jobs:
           key: windows-${{ hashFiles('configure.ac', 'src/Makefile.am', 'tools/Makefile.am') }}
 
       - name: Prepare Autotools build system
-        # Use the 'shell: msys2 {0}' syntax to run commands in the configured MSYS2 environment
         shell: msys2 {0}
         run: |
           ./autogen.sh
@@ -58,14 +51,22 @@ jobs:
       - name: Configure project
         shell: msys2 {0}
         run: |
-          # Configure for the mingw64 target environment
-          ./configure
+          ./configure --without-cython
 
-      - name: Build only 'idevicesyslog.exe' executable
+      - name: Build idevicesyslog.exe
         shell: msys2 {0}
         run: |
-          # The 'make' command within MSYS2 will produce 'idevicesyslog.exe'
-          make idevicesyslog
+          # 1. Build internal static dependencies
+          make -C 3rd_party
+          make -C common
+          
+          # 2. Build the main library (required for linking tools)
+          make -C src
+          
+          # 3. Build ONLY idevicesyslog in the tools directory
+          # -C changes directory to 'tools'
+          # targeting 'idevicesyslog.exe' explicitly skips building other broken tools
+          make -C tools idevicesyslog.exe
 
       - name: Verify build artifact location
         shell: bash
@@ -76,7 +77,6 @@ jobs:
       - name: Upload executable artifact
         uses: actions/upload-artifact@v4
         with:
-          # Use .exe extension in the name and path
           name: idevicesyslog-executable-windows
           path: tools/idevicesyslog.exe
           retention-days: 5
