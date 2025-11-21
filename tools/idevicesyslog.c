@@ -72,7 +72,10 @@ static int triggered = 0;
 
 static idevice_t device = NULL;
 static syslog_relay_client_t syslog = NULL;
+
 static ostrace_client_t ostrace = NULL;
+
+
 
 #static const char QUIET_FILTER[] = "CircleJoinRequested|CommCenter|HeuristicInterpreter|MobileMail|PowerUIAgent|ProtectedCloudKeySyncing|SpringBoard|UserEventAgent|WirelessRadioManagerd|accessoryd|accountsd|aggregated|analyticsd|appstored|apsd|assetsd|assistant_service|backboardd|biometrickitd|bluetoothd|calaccessd|callservicesd|cloudd|com.apple.Safari.SafeBrowsing.Service|contextstored|corecaptured|coreduetd|corespeechd|cdpd|dasd|dataaccessd|distnoted|dprivacyd|duetexpertd|findmydeviced|fmfd|fmflocatord|gpsd|healthd|homed|identityservicesd|imagent|itunescloudd|itunesstored|kernel|locationd|maild|mDNSResponder|mediaremoted|mediaserverd|mobileassetd|nanoregistryd|nanotimekitcompaniond|navd|nsurlsessiond|passd|pasted|photoanalysisd|powerd|powerlogHelperd|ptpd|rapportd|remindd|routined|runningboardd|searchd|sharingd|suggestd|symptomsd|timed|thermalmonitord|useractivityd|vmd|wifid|wirelessproxd";
 
@@ -904,6 +907,8 @@ static void print_usage(int argc, char **argv, int is_error)
 		"                          separated by \"|\".\n"
 		"  -q, --quiet             set a filter to exclude common noisy processes\n"
 		"  --quiet-list            prints the list of processes for --quiet and exits\n"
+		"  --quiet-add PROCESS     add additional process(es) to the quiet filter\n" \
+        "                          (can be used multiple times or with | separator)\n" \
 		"  -k, --kernel            only print kernel messages\n"
 		"  -K, --no-kernel         suppress kernel messages\n"
 		"\n"
@@ -922,34 +927,35 @@ int main(int argc, char *argv[])
 	int exclude_kernel = 0;
 	int force_colors = 0;
 	int c = 0;
-	const struct option longopts[] = {
-		{ "debug", no_argument, NULL, 'd' },
-		{ "help", no_argument, NULL, 'h' },
-		{ "udid", required_argument, NULL, 'u' },
-		{ "network", no_argument, NULL, 'n' },
-		{ "exit", no_argument, NULL, 'x' },
-		{ "trigger", required_argument, NULL, 't' },
-		{ "untrigger", required_argument, NULL, 'T' },
-		{ "match", required_argument, NULL, 'm' },
-		{ "process", required_argument, NULL, 'p' },
-		{ "exclude", required_argument, NULL, 'e' },
-		{ "quiet", no_argument, NULL, 'q' },
-		{ "kernel", no_argument, NULL, 'k' },
-		{ "no-kernel", no_argument, NULL, 'K' },
-		{ "quiet-list", no_argument, NULL, 1 },
-		{ "no-colors", no_argument, NULL, 2 },
-		{ "colors", no_argument, NULL, 3 },
-		{ "syslog_relay", no_argument, NULL, 4 },
-		{ "syslog-relay", no_argument, NULL, 4 },
-		{ "legacy", no_argument, NULL, 4 },
-		{ "start-time", required_argument, NULL, 5 },
-		{ "size-limit", required_argument, NULL, 6 },
-		{ "age-limit", required_argument, NULL, 7 },
-		{ "output", required_argument, NULL, 'o' },
-		{ "version", no_argument, NULL, 'v' },
-		{ NULL, 0, NULL, 0}
-	};
-
+	// In the main() function, add to longopts array (around line 650):
+const struct option longopts[] = {
+	{ "debug", no_argument, NULL, 'd' },
+	{ "help", no_argument, NULL, 'h' },
+	{ "udid", required_argument, NULL, 'u' },
+	{ "network", no_argument, NULL, 'n' },
+	{ "exit", no_argument, NULL, 'x' },
+	{ "trigger", required_argument, NULL, 't' },
+	{ "untrigger", required_argument, NULL, 'T' },
+	{ "match", required_argument, NULL, 'm' },
+	{ "process", required_argument, NULL, 'p' },
+	{ "exclude", required_argument, NULL, 'e' },
+	{ "quiet", no_argument, NULL, 'q' },
+	{ "quiet-add", required_argument, NULL, 8 },  // NEW OPTION
+	{ "kernel", no_argument, NULL, 'k' },
+	{ "no-kernel", no_argument, NULL, 'K' },
+	{ "quiet-list", no_argument, NULL, 1 },
+	{ "no-colors", no_argument, NULL, 2 },
+	{ "colors", no_argument, NULL, 3 },
+	{ "syslog_relay", no_argument, NULL, 4 },
+	{ "syslog-relay", no_argument, NULL, 4 },
+	{ "legacy", no_argument, NULL, 4 },
+	{ "start-time", required_argument, NULL, 5 },
+	{ "size-limit", required_argument, NULL, 6 },
+	{ "age-limit", required_argument, NULL, 7 },
+	{ "output", required_argument, NULL, 'o' },
+	{ "version", no_argument, NULL, 'v' },
+	{ NULL, 0, NULL, 0}
+};
 	signal(SIGINT, clean_exit);
 	signal(SIGTERM, clean_exit);
 #ifndef _WIN32
@@ -977,6 +983,15 @@ int main(int argc, char *argv[])
 		case 'q':
 			exclude_filter++;
 			add_filter(QUIET_FILTER);
+			break;
+		case 8: // --quiet-add
+			if (!*optarg) {
+				fprintf(stderr, "ERROR: quiet-add filter string must not be empty!\n");
+				print_usage(argc, argv, 1);
+				return 2;
+			}
+			exclude_filter++;
+			add_filter(optarg);
 			break;
 		case 'p':
 		case 'e':
@@ -1275,6 +1290,7 @@ int main(int argc, char *argv[])
 	if (num_pid_filters > 0) {
 		free(pid_filters);
 	}
+	
 	if (num_msg_filters > 0) {
 		int i;
 		for (i = 0; i < num_msg_filters; i++) {
