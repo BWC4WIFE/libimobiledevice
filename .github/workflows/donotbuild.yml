@@ -39,7 +39,7 @@ jobs:
             mingw-w64-x86_64-libplist
             mingw-w64-x86_64-libusbmuxd
             mingw-w64-x86_64-openssl
-            mingw-w64-x86_64-libimobiledevice-dev
+            
             mingw-w64-x86_64-libimobiledevice-glue
             
 
@@ -54,6 +54,11 @@ jobs:
           curl -LO https://github.com/libimobiledevice/libtatsu/releases/download/1.0.5/libtatsu-1.0.5.tar.bz2
           tar -xjf libtatsu-1.0.5.tar.bz2
           cd libtatsu-1.0.5
+          ./configure --prefix=/mingw64
+          make
+          make install
+          curl https://github.com/libimobiledevice/libimobiledevice/releases/download/1.4.0/libimobiledevice-1.4.0.tar.bz2
+          tar -xjf libimobiledevice-1.4.0
           ./configure --prefix=/mingw64
           make
           make install
