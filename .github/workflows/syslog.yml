@@ -23,19 +23,20 @@ jobs:
         with:
           msystem: MINGW64
           # Install basic tools (git, autotools, compiler) plus required dependencies via pacman
+          # IMPORTANT: Removed inline comments to fix pacman command failure.
           install: >
             git
             autoconf
             automake
             make
             pkg-config
-            libtool # Added libtool to resolve libtoolize: command not found
+            libtool
             mingw-w64-x86_64-toolchain
             mingw-w64-x86_64-libplist
             mingw-w64-x86_64-libusbmuxd
             mingw-w64-x86_64-openssl
             mingw-w64-x86_64-libimobiledevice-glue
-            mingw-w64-x86_64-libtatsu # Added libtatsu development package
+            mingw-w64-x86_64-libtatsu
           update: true
 
       # Caching is adjusted slightly for the Windows environment, but the paths are mostly relative
@@ -46,7 +47,7 @@ jobs:
           path: |
             src/.libs
             common/.libs
-            tools/idevicesyslog.exe # Ensure .exe extension is included for artifact cache
+            tools/idevicesyslog.exe
           key: windows-${{ hashFiles('configure.ac', 'src/Makefile.am', 'tools/Makefile.am') }}
 
       - name: Prepare Autotools build system
