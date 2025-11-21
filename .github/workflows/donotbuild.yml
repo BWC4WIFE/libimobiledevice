@@ -58,9 +58,9 @@ jobs:
         run: |
           ./autogen.sh
 
-        - name: Build and install libtatsu
-          shell: msys2 {0}
-          run: |
+      - name: Build and install libtatsu
+        shell: msys2 {0}
+        run: |
             git clone https://github.com/libimobiledevice/libtatsu.git
             cd libtatsu
             ./autogen.sh
