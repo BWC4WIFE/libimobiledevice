@@ -8,7 +8,7 @@ name: build
 
 
 
-#on:
+on:
   push:
   workflow_dispatch:
     inputs:
@@ -43,21 +43,7 @@ jobs:
              
           update: true
 
-      # - name: Cache build artifacts
-        # id: cache-artifacts
-        # uses: actions/cache@v4
-        # with:
-          # path: |
-            # src/.libs
-            # common/.libs
-            # tools/idevicesyslog.exe
-          # key: windows-${{ hashFiles('configure.ac', 'src/Makefile.am', 'tools/Makefile.am') }}
-
-      - name: Prepare Autotools build system
-        shell: msys2 {0}
-        run: |
-          ./autogen.sh
-
+          
       - name: Build and install libtatsu
         shell: msys2 {0}
         run: |
@@ -68,13 +54,31 @@ jobs:
             make
             make install
 
+      - name: Cache build artifacts
+        id: cache-artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            src/.libs
+            common/.libs
+            tools/idevicesyslog.exe
+          key: windows-${{ hashFiles('configure.ac', 'src/Makefile.am', 'tools/Makefile.am') }}
+
+
+
+
+      - name: Prepare Autotools build system
+        shell: msys2 {0}
+        run: |
+          ./autogen.sh
+
       - name: Configure project
         shell: msys2 {0}
         env:
           PKG_CONFIG_PATH: /mingw64/lib/pkgconfig:/mingw64/share/pkgconfig
         run: |
           ./configure --without-cython
-
+      
       - name: Build idevicesyslog.exe
         shell: msys2 {0}
         run: |
