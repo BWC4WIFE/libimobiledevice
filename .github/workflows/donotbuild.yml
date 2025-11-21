@@ -58,6 +58,16 @@ jobs:
         run: |
           ./autogen.sh
 
+        - name: Build and install libtatsu
+          shell: msys2 {0}
+          run: |
+            git clone https://github.com/libimobiledevice/libtatsu.git
+            cd libtatsu
+            ./autogen.sh
+            ./configure --prefix=/mingw64
+            make
+            make install
+
       - name: Configure project
         shell: msys2 {0}
         run: |
