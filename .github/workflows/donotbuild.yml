@@ -8,7 +8,7 @@ name: build
 
 
 
-on:
+#on:
   push:
   workflow_dispatch:
     inputs:
@@ -39,20 +39,24 @@ jobs:
             mingw-w64-x86_64-libplist
             mingw-w64-x86_64-libusbmuxd
             mingw-w64-x86_64-openssl
+            mingw-w64-x86_64-libimobiledevice-dev
             mingw-w64-x86_64-libimobiledevice-glue
+            
+
+            
              
           update: true
 
           
-      - name: Build and install libtatsu
+      - name: Build and install libtatsu from release tarball
         shell: msys2 {0}
         run: |
-            git clone https://github.com/libimobiledevice/libtatsu.git
-            cd libtatsu
-            ./autogen.sh
-            ./configure --prefix=/mingw64
-            make
-            make install
+          curl -LO https://github.com/libimobiledevice/libtatsu/releases/download/1.0.5/libtatsu-1.0.5.tar.bz2
+          tar -xjf libtatsu-1.0.5.tar.bz2
+          cd libtatsu-1.0.5
+          ./configure --prefix=/mingw64
+          make
+          make install
 
       - name: Cache build artifacts
         id: cache-artifacts
