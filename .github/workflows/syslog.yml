@@ -1,0 +1,72 @@
+name: Build idevicesyslog only
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build_idevicesyslog:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache build artifacts
+        id: cache-artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            src/.libs
+            common/.libs
+            tools/idevicesyslog
+          # Key is based on OS and the content of key configuration/build files
+          key: ${{ runner.os }}-${{ hashFiles('configure.ac', 'src/Makefile.am', 'tools/Makefile.am') }}
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          # Essential build tools (automake, libtool, compiler)
+          sudo apt-get install -y \
+            build-essential \
+            automake \
+            libtool \
+            pkg-config \
+            git
+
+          # External dependencies needed by libimobiledevice:
+          # libplist, libusbmuxd, OpenSSL (for libssl-dev), libimobiledevice-glue
+          sudo apt-get install -y \
+            libplist-dev \
+            libusbmuxd-dev \
+            libssl-dev \
+            libimobiledevice-glue-dev \
+            libtatsu-dev
+
+      - name: Prepare Autotools build system
+        run: |
+          ./autogen.sh
+
+      - name: Configure project
+        run: |
+          # Default configure options are used.
+          ./configure
+
+      - name: Build only 'idevicesyslog' executable
+        # 'make <target>' ensures that all dependencies (like libimobiledevice-1.0.la)
+        # are built before the target executable itself.
+        run: |
+          make idevicesyslog
+
+      - name: Verify build artifact location
+        run: |
+          echo "The executable is built at: tools/idevicesyslog"
+          ls -l tools/idevicesyslog
+
+      - name: Upload executable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: idevicesyslog-executable-${{ runner.os }}
+          path: tools/idevicesyslog
+          retention-days: 5
