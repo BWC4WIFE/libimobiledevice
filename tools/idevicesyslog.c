@@ -969,13 +969,13 @@ const struct option longopts[] = {
 	{ "quiet", no_argument, NULL, 'q' },
 	{ "quiet-add", required_argument, NULL, 8 },
 	{ "quiet-list", no_argument, NULL, 1 },
-	{ "no-ui", no_argument, NULL, 101 },
-	{ "no-network", no_argument, NULL, 102 },
-	{ "no-cloud", no_argument, NULL, 103 },
-	{ "no-system", no_argument, NULL, 104 },
-	{ "no-location", no_argument, NULL, 105 },
-	{ "no-intel", no_argument, NULL, 106 },
-	{ "no-media", no_argument, NULL, 107 },
+	{ "no-ui", no_argument, NULL, 301 },
+	{ "no-network", no_argument, NULL, 302 },
+	{ "no-cloud", no_argument, NULL, 303 },
+	{ "no-system", no_argument, NULL, 304 },
+	{ "no-location", no_argument, NULL, 305 },
+	{ "no-intel", no_argument, NULL, 306 },
+	{ "no-media", no_argument, NULL, 307 },
 	{ "kernel", no_argument, NULL, 'k' },
 	{ "no-kernel", no_argument, NULL, 'K' },
 	{ "quiet-list", no_argument, NULL, 1 },
@@ -1172,31 +1172,31 @@ const struct option longopts[] = {
 			printf("%s %s\n", TOOL_NAME, PACKAGE_VERSION);
 			return 0;
 				// CATEGORY HANDLERS
-		case 101: // --no-ui
+		case 301: // --no-ui
 			exclude_filter++;
 			add_filter(FILTER_UI);
 			break;
-		case 102: // --no-network
+		case 302: // --no-network
 			exclude_filter++;
 			add_filter(FILTER_NETWORK);
 			break;
-		case 103: // --no-cloud
+		case 303: // --no-cloud
 			exclude_filter++;
 			add_filter(FILTER_CLOUD);
 			break;
-		case 104: // --no-system
+		case 304: // --no-system
 			exclude_filter++;
 			add_filter(FILTER_SYSTEM);
 			break;
-		case 105: // --no-location
+		case 305: // --no-location
 			exclude_filter++;
 			add_filter(FILTER_LOCATION);
 			break;
-		case 106: // --no-intel (Intelligence/Biome)
+		case 306: // --no-intel (Intelligence/Biome)
 			exclude_filter++;
 			add_filter(FILTER_INTELLIGENCE);
 			break;
-		case 107: // --no-media
+		case 307: // --no-media
 			exclude_filter++;
 			add_filter(FILTER_MEDIA);
 			break;
