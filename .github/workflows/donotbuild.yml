@@ -35,13 +35,14 @@ jobs:
             make
             pkg-config
             libtool
-            libcurl4
-          
+            libcurl
+            libusb-1.0-0-dev 
             mingw-w64-x86_64-toolchain
             mingw-w64-x86_64-libplist
             mingw-w64-x86_64-libusbmuxd
             mingw-w64-x86_64-openssl
-            
+            libssl-dev
+            libreadline-dev
             mingw-w64-x86_64-libimobiledevice-glue
             
 
