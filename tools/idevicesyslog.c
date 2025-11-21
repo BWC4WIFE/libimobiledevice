@@ -75,13 +75,34 @@ static syslog_relay_client_t syslog = NULL;
 
 static ostrace_client_t ostrace = NULL;
 
+// [START INSERTION: Filter Categories]
+// 1. UI & Interaction (SpringBoard, Touch, Siri, Tips)
+static const char FILTER_UI[] = "SpringBoard|backboardd|UserEventAgent|PowerUIAgent|assistant_service|tipsd|tipsi|corecaptured|pasted|distnoted";
 
+// 2. Networking & Connectivity (WiFi, Cell, Bluetooth, DNS)
+static const char FILTER_NETWORK[] = "CommCenter|WirelessRadioManagerd|wifid|bluetoothd|wirelessproxd|apsd|mDNSResponder|symptomsd|rapportd|sharingd|linkd|networkserviceproxy";
 
+// 3. Cloud, Auth & Security (iCloud, Accounts, Security, Trust)
+static const char FILTER_CLOUD[] = "cloudd|accountsd|identityservicesd|cdpd|trustd|securityd|cfprefsd|ProtectedCloudKeySyncing|itunescloudd|itunesstored|appstored|keybagd|akd|passd";
 
+// 4. System Internals (Kernel, Power, Analytics, Daemons)
+static const char FILTER_SYSTEM[] = "kernel|powerd|thermalmonitord|aggregated|analyticsd|runningboardd|vmd|timed|mobileassetd|nanoregistryd|nanotimekitcompaniond";
 
-static const char QUIET_FILTER[] = "CircleJoinRequested|CommCenter|HeuristicInterpreter|IntelligencePlatformComputeService|MobileMail|PowerUIAgent|ProtectedCloudKeySyncing|SpringBoard|UserEventAgent|WirelessRadioManagerd|accessoryd|accountsd|aggregated|analyticsd|appstored|apsd|assetsd|assistant_service|audioaccessoryd|backboardd|biomesyncd|biometrickitd|bluetoothd|calaccessd|callservicesd|cdpd|cfprefsd|cloudd|contextstored|corecaptured|coreduetd|corespeechd|dasd|dataaccessd|distnoted|dprivacyd|duetexpertd|findmydeviced|fmfd|fmflocatord|gpsd|healthd|homed|identityservicesd|imagent|intelligencecontextd|itunescloudd|itunesstored|kernel|locationd|maild|mediaremoted|mediaserverd|mobileassetd|nanoregistryd|nanotimekitcompaniond|navd|passd|pasted|photoanalysisd|powerd|powerlogHelperd|ptpd|rapportd|remindd|routined|searchd|searchpartyd|securityd|sharingd|suggestd|symptomsd|thermalmonitord|timed|tipsd|tipsi|trustd|useractivityd|vmd|wifid|wirelessproxd";
+// 5. Location & Motion (GPS, Routine, FindMy)
+static const char FILTER_LOCATION[] = "locationd|routined|gpsd|navd|findmydeviced|fmfd|fmflocatord|biometrickitd";
+
+// 6. Intelligence & Background Tasks (Duet, Biome, Suggestions)
+static const char FILTER_INTELLIGENCE[] = "dasd|duetexpertd|coreduetd|biomesyncd|suggestd|intelligencecontextd|IntelligencePlatformComputeService|HeuristicInterpreter|useractivityd|contextstored";
+
+// 7. Media & Audio
+static const char FILTER_MEDIA[] = "mediaserverd|mediaremoted|audioaccessoryd|corespeechd";
+
+// 8. Apps (Mail, Calendar, etc)
+static const char FILTER_APPS[] = "MobileMail|calaccessd|remindd|callservicesd|photoanalysisd|maild";
+// [END INSERTION]
 
 static int use_network = 0;
+
 
 static long long start_time = -1;
 static long long size_limit = -1;
@@ -906,9 +927,15 @@ static void print_usage(int argc, char **argv, int is_error)
 		"                          PROCESS is a process name or multiple process names\n"
 		"                          separated by \"|\".\n"
 		"  -q, --quiet             set a filter to exclude common noisy processes\n"
-		"  --quiet-list            prints the list of processes for --quiet and exits\n"
-		"  --quiet-add PROCESS     add additional process(es) to the quiet filter\n" \
-        "                          (can be used multiple times or with | separator)\n" \
+		"  --quiet-list            print the lists used by --quiet and the categories below\n"
+		"  --quiet-add PROCESS     add a custom process to the exclusion list\n"
+		"  --no-ui                 exclude UI & SpringBoard related noise\n"
+		"  --no-network            exclude Network, Wi-Fi, and Bluetooth noise\n"
+		"  --no-cloud              exclude iCloud, Accounts, and Auth noise\n"
+		"  --no-system             exclude Kernel and System Daemon noise\n"
+		"  --no-location           exclude GPS, FindMy, and Routine noise\n"
+		"  --no-intel              exclude Biome and Intelligence Platform noise\n"
+		"  --no-media              exclude Audio and Media noise\n"
 		"  -k, --kernel            only print kernel messages\n"
 		"  -K, --no-kernel         suppress kernel messages\n"
 		"\n"
@@ -940,7 +967,15 @@ const struct option longopts[] = {
 	{ "process", required_argument, NULL, 'p' },
 	{ "exclude", required_argument, NULL, 'e' },
 	{ "quiet", no_argument, NULL, 'q' },
-	{ "quiet-add", required_argument, NULL, 8 },  // NEW OPTION
+	{ "quiet-add", required_argument, NULL, 8 },
+	{ "quiet-list", no_argument, NULL, 1 },
+	{ "no-ui", no_argument, NULL, 101 },
+	{ "no-network", no_argument, NULL, 102 },
+	{ "no-cloud", no_argument, NULL, 103 },
+	{ "no-system", no_argument, NULL, 104 },
+	{ "no-location", no_argument, NULL, 105 },
+	{ "no-intel", no_argument, NULL, 106 },
+	{ "no-media", no_argument, NULL, 107 },
 	{ "kernel", no_argument, NULL, 'k' },
 	{ "no-kernel", no_argument, NULL, 'K' },
 	{ "quiet-list", no_argument, NULL, 1 },
@@ -981,8 +1016,16 @@ const struct option longopts[] = {
 			use_network = 1;
 			break;
 		case 'q':
+			// Legacy -q: Add EVERYTHING
 			exclude_filter++;
-			add_filter(QUIET_FILTER);
+			add_filter(FILTER_UI);
+			add_filter(FILTER_NETWORK);
+			add_filter(FILTER_CLOUD);
+			add_filter(FILTER_SYSTEM);
+			add_filter(FILTER_LOCATION);
+			add_filter(FILTER_INTELLIGENCE);
+			add_filter(FILTER_MEDIA);
+			add_filter(FILTER_APPS);
 			break;
 		case 8: // --quiet-add
 			if (!*optarg) {
@@ -1083,8 +1126,15 @@ const struct option longopts[] = {
 		case 'h':
 			print_usage(argc, argv, 0);
 			return 0;
-		case 1:	{
-			printf("%s\n", QUIET_FILTER);
+		case 1: { // --quiet-list
+			printf("UI: %s\n", FILTER_UI);
+			printf("NETWORK: %s\n", FILTER_NETWORK);
+			printf("CLOUD: %s\n", FILTER_CLOUD);
+			printf("SYSTEM: %s\n", FILTER_SYSTEM);
+			printf("LOCATION: %s\n", FILTER_LOCATION);
+			printf("INTEL: %s\n", FILTER_INTELLIGENCE);
+			printf("MEDIA: %s\n", FILTER_MEDIA);
+			printf("APPS: %s\n", FILTER_APPS);
 			return 0;
 		}
 		case 2:
@@ -1121,6 +1171,35 @@ const struct option longopts[] = {
 		case 'v':
 			printf("%s %s\n", TOOL_NAME, PACKAGE_VERSION);
 			return 0;
+				// CATEGORY HANDLERS
+		case 101: // --no-ui
+			exclude_filter++;
+			add_filter(FILTER_UI);
+			break;
+		case 102: // --no-network
+			exclude_filter++;
+			add_filter(FILTER_NETWORK);
+			break;
+		case 103: // --no-cloud
+			exclude_filter++;
+			add_filter(FILTER_CLOUD);
+			break;
+		case 104: // --no-system
+			exclude_filter++;
+			add_filter(FILTER_SYSTEM);
+			break;
+		case 105: // --no-location
+			exclude_filter++;
+			add_filter(FILTER_LOCATION);
+			break;
+		case 106: // --no-intel (Intelligence/Biome)
+			exclude_filter++;
+			add_filter(FILTER_INTELLIGENCE);
+			break;
+		case 107: // --no-media
+			exclude_filter++;
+			add_filter(FILTER_MEDIA);
+			break;
 		default:
 			print_usage(argc, argv, 1);
 			return 2;
