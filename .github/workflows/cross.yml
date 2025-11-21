@@ -1,0 +1,53 @@
+name: build
+  
+  on:
+     workflow_dispatch:
+      inputs:
+        reason:
+          description: 'Reason for manual execution'
+          required: false
+          default: 'Manual trigger for Windows build.'
+  
+jobs:
+  build_idevicesyslog_windows_cross:
+  
+    runs-on: ubuntu-latest  # Much faster CI startup
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+  
+      - name: Install cross-compilation dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            pkg-config \
+            autoconf \
+            automake \
+            libtool \
+            mingw-w64 \
+            libplist-dev \
+            libusbmuxd-dev \
+            libimobiledevice-dev \
+            libssl-dev
+  
+      - name: Build libtatsu for Windows
+        run: |
+          wget https://github.com/libimobiledevice/libtatsu/releases/download/1.0.5/libtatsu-1.0.5.tar.bz2
+          tar -xjf libtatsu-1.0.5.tar.bz2
+          cd libtatsu-1.0.5
+          ./configure --host=x86_64-w64-mingw32 --prefix=/usr/x86_64-w64-mingw32
+          make
+          sudo make install
+  
+      - name: Build main project
+        env:
+          CC: x86_64-w64-mingw32-gcc
+          PKG_CONFIG_PATH: /usr/x86_64-w64-mingw32/lib/pkgconfig
+        run: |
+          ./autogen.sh
+          ./configure --host=x86_64-w64-mingw32
+          make -C 3rd_party
+          make -C common  
+          make -C src
+          make -C tools idevicesyslog.exe
