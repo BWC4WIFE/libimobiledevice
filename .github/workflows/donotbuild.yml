@@ -6,91 +6,85 @@ name: build
 #  schedule:
 #    - cron: '0 0 1 * *'
 
+
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for manual execution'
+        required: false
+        default: 'Manual trigger for Windows build.'
+
 jobs:
- 
-  build-windows:
+  build_idevicesyslog_windows:
     runs-on: windows-latest
-    defaults:
-      run:
-        shell: msys2 {0}
-    strategy:
-      fail-fast: false
-      matrix:
-        include: [
-          { msystem: MINGW64, arch: x86_64 },
-          { msystem: MINGW32, arch: i686   }
-        ]
     steps:
-    - uses: msys2/setup-msys2@v2
-      with:
-        msystem: ${{ matrix.msystem }}
-        release: false
-        update: false
-        install: >-
-          base-devel
-          git
-          mingw-w64-${{ matrix.arch }}-gcc
-          mingw-w64-${{ matrix.arch }}-pkg-config
-          mingw-w64-${{ matrix.arch }}-openssl
-          make
-          libtool
-          autoconf
-          automake-wrapper
-    - name: prepare environment
-      run: |
-          dest=`echo ${{ matrix.msystem }} |tr [:upper:] [:lower:]`
-          echo "dest=$dest" >> $GITHUB_ENV
-          echo "target_triplet=`gcc -dumpmachine`" >> $GITHUB_ENV
-          git config --global core.autocrlf false
-    - name: fetch libplist
-      uses: dawidd6/action-download-artifact@v6
-      with:
-        github_token: ${{secrets.GITHUB_TOKEN}}
-        workflow: build.yml
-        name: libplist-latest_${{ matrix.arch }}-${{ env.dest }}
-        repo: libimobiledevice/libplist
-    - name: fetch libusbmuxd
-      uses: dawidd6/action-download-artifact@v6
-      with:
-        github_token: ${{secrets.GITHUB_TOKEN}}
-        workflow: build.yml
-        name: libusbmuxd-latest_${{ matrix.arch }}-${{ env.dest }}
-        repo: libimobiledevice/libusbmuxd
-    - name: fetch libimobiledevice-glue
-      uses: dawidd6/action-download-artifact@v6
-      with:
-        github_token: ${{secrets.GITHUB_TOKEN}}
-        workflow: build.yml
-        name: libimobiledevice-glue-latest_${{ matrix.arch }}-${{ env.dest }}
-        repo: libimobiledevice/libimobiledevice-glue
-    - name: fetch libtatsu
-      uses: dawidd6/action-download-artifact@v6
-      with:
-        github_token: ${{secrets.GITHUB_TOKEN}}
-        workflow: build.yml
-        name: libtatsu-latest_${{ matrix.arch }}-${{ env.dest }}
-        repo: libimobiledevice/libtatsu
-    - name: install external dependencies
-      run: |
-          mkdir extract
-          for I in *.tar; do
-            tar -C extract -xvf $I
-          done
-          cp -r extract/* /
-    - uses: actions/checkout@v4
-    - name: autogen
-      run: ./autogen.sh CC=gcc CXX=g++ --enable-debug
-    - name: make
-      run: make
-    - name: make install
-      run: make install
-    - name: prepare artifact
-      run: |
-          mkdir -p dest
-          DESTDIR=`pwd`/dest make install
-          tar -C dest -cf libimobiledevice.tar ${{ env.dest }}
-    - name: publish artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: libimobiledevice-latest_${{ matrix.arch }}-${{ env.dest }}
-        path: libimobiledevice.tar
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          install: >
+            git
+            autoconf
+            automake
+            make
+            pkg-config
+            libtool
+            mingw-w64-x86_64-toolchain
+            mingw-w64-x86_64-libplist
+            mingw-w64-x86_64-libusbmuxd
+            mingw-w64-x86_64-openssl
+            mingw-w64-x86_64-libimobiledevice-glue
+          update: true
+
+      - name: Cache build artifacts
+        id: cache-artifacts
+        uses: actions/cache@v4
+        with:
+          path: |
+            src/.libs
+            common/.libs
+            tools/idevicesyslog.exe
+          key: windows-${{ hashFiles('configure.ac', 'src/Makefile.am', 'tools/Makefile.am') }}
+
+      - name: Prepare Autotools build system
+        shell: msys2 {0}
+        run: |
+          ./autogen.sh
+
+      - name: Configure project
+        shell: msys2 {0}
+        run: |
+          ./configure --without-cython
+
+      - name: Build idevicesyslog.exe
+        shell: msys2 {0}
+        run: |
+          # 1. Build internal static dependencies
+          make -C 3rd_party
+          make -C common
+          
+          # 2. Build the main library (required for linking tools)
+          make -C src
+          
+          # 3. Build ONLY idevicesyslog in the tools directory
+          # -C changes directory to 'tools'
+          # targeting 'idevicesyslog.exe' explicitly skips building other broken tools
+          make -C tools idevicesyslog.exe
+
+      - name: Verify build artifact location
+        shell: bash
+        run: |
+          echo "The executable is built at: tools/idevicesyslog.exe"
+          ls -l tools/idevicesyslog.exe
+
+      - name: Upload executable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: idevicesyslog-executable-windows
+          path: tools/idevicesyslog.exe
+          retention-days: 5
