@@ -16,29 +16,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup MSYS2
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: MINGW64
-          install: >
-            git
-            autoconf
-            automake
-            make
-            pkg-config
-            libtool
-            libcurl
-            mingw-w64-x86_64-toolchain
-            mingw-w64-x86_64-libplist
-            mingw-w64-x86_64-libusbmuxd
-            mingw-w64-x86_64-openssl
-            mingw-w64-ucrt-x86_64-readline
-            mingw-w64-x86_64-libxml2
-            mingw-w64-x86_64-bzip2
-            base-devel
-            pkgconf
-          update: true
-
+    
       - name: Setup build environment and dependencies
         shell: msys2 {0}
         run: |
@@ -81,25 +59,32 @@ jobs:
           export LIBCURL_LIBS="`pwd`/deps/lib/libcurl.a $MINGW_PREFIX/lib/libzstd.a $MINGW_PREFIX/lib/libz.a $OPENSSL_LIBS -lws2_32 -lgdi32 -lcrypt32 -lwldap32 -lbcrypt -lucrt"
           export LIBCURL_VERSION="8.10.1"
 
-      - name: Build and install libtatsu from release tarball
-        shell: msys2 {0}
-        run: |
-          curl -LO https://github.com/libimobiledevice/libtatsu/releases/download/1.0.5/libtatsu-1.0.5.tar.bz2
-          tar -xjf libtatsu-1.0.5.tar.bz2
-          cd libtatsu-1.0.5
-          ./configure --prefix=/mingw64
-          make
-          make install
-          
-      - name: Build and install libimobiledevice
-        shell: msys2 {0}
-        run: |
-          curl -LO https://github.com/libimobiledevice/libimobiledevice/releases/download/1.4.0/libimobiledevice-1.4.0.tar.bz2
-          tar -xjf libimobiledevice-1.4.0.tar.bz2
-          cd libimobiledevice-1.4.0
-          ./configure --prefix=/mingw64
-          make
-          make install
+
+	  - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          install: >
+            git
+            autoconf
+            automake
+            make
+            pkg-config
+            libtool
+            mingw-w64-x86_64-toolchain
+            mingw-w64-x86_64-libplist
+            mingw-w64-x86_64-libusbmuxd
+            mingw-w64-x86_64-openssl
+            mingw-w64-ucrt-x86_64-readline
+            mingw-w64-x86_64-libxml2
+            mingw-w64-x86_64-bzip2
+            base-devel
+            pkgconf
+          update: true
+
+
+
+
 
       - name: Cache build artifacts
         id: cache-artifacts
@@ -131,7 +116,29 @@ jobs:
         run: |
           ./configure --without-cython
       
-      - name: Build idevicesyslog.exe
+      - name: Build and install libtatsu from release tarball
+        shell: msys2 {0}
+        run: |
+          curl -LO https://github.com/libimobiledevice/libtatsu/releases/download/1.0.5/libtatsu-1.0.5.tar.bz2
+          tar -xjf libtatsu-1.0.5.tar.bz2
+          cd libtatsu-1.0.5
+          ./configure --prefix=/mingw64
+          make
+          make install
+          
+      - name: Build and install libimobiledevice
+        shell: msys2 {0}
+        run: |
+          curl -LO https://github.com/libimobiledevice/libimobiledevice/releases/download/1.4.0/libimobiledevice-1.4.0.tar.bz2
+          tar -xjf libimobiledevice-1.4.0.tar.bz2
+          cd libimobiledevice-1.4.0
+          ./configure --prefix=/mingw64
+          make
+          make install 
+
+
+
+	  - name: Build idevicesyslog.exe
         shell: msys2 {0}
         env:
           LIBCURL_CFLAGS: ${{ env.LIBCURL_CFLAGS }}
