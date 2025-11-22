@@ -16,7 +16,28 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-    
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          install: >
+            git
+            autoconf
+            automake
+            make
+            pkg-config
+            libtool
+            mingw-w64-x86_64-toolchain
+            mingw-w64-x86_64-libplist
+            mingw-w64-x86_64-libusbmuxd
+            mingw-w64-x86_64-openssl
+            mingw-w64-ucrt-x86_64-readline
+            mingw-w64-x86_64-libxml2
+            mingw-w64-x86_64-bzip2
+            base-devel
+            pkgconf
+          update: true
+
       - name: Setup build environment and dependencies
         shell: msys2 {0}
         run: |
@@ -58,31 +79,6 @@ jobs:
           export LIBCURL_CFLAGS="-I`pwd`/deps/include -DCURL_STATICLIB"
           export LIBCURL_LIBS="`pwd`/deps/lib/libcurl.a $MINGW_PREFIX/lib/libzstd.a $MINGW_PREFIX/lib/libz.a $OPENSSL_LIBS -lws2_32 -lgdi32 -lcrypt32 -lwldap32 -lbcrypt -lucrt"
           export LIBCURL_VERSION="8.10.1"
-
-
-	  - name: Setup MSYS2
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: MINGW64
-          install: >
-            git
-            autoconf
-            automake
-            make
-            pkg-config
-            libtool
-            mingw-w64-x86_64-toolchain
-            mingw-w64-x86_64-libplist
-            mingw-w64-x86_64-libusbmuxd
-            mingw-w64-x86_64-openssl
-            mingw-w64-ucrt-x86_64-readline
-            mingw-w64-x86_64-libxml2
-            mingw-w64-x86_64-bzip2
-            base-devel
-            pkgconf
-          update: true
-
-
 
 
 
