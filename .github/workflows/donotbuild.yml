@@ -42,7 +42,6 @@ jobs:
             mingw-w64-x86_64-libusbmuxd
             mingw-w64-x86_64-openssl
             libssl-dev
-            libreadline-dev
             mingw-w64-x86_64-libimobiledevice-glue
             
 
