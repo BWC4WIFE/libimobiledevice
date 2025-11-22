@@ -80,8 +80,6 @@ jobs:
           export LIBCURL_LIBS="`pwd`/deps/lib/libcurl.a $MINGW_PREFIX/lib/libzstd.a $MINGW_PREFIX/lib/libz.a $OPENSSL_LIBS -lws2_32 -lgdi32 -lcrypt32 -lwldap32 -lbcrypt -lucrt"
           export LIBCURL_VERSION="8.10.1"
 
-
-
       - name: Cache build artifacts
         id: cache-artifacts
         uses: actions/cache@v4
@@ -134,14 +132,14 @@ jobs:
 
 
 
-	  - name: Build idevicesyslog.exe
-        shell: msys2 {0}
-        env:
-          LIBCURL_CFLAGS: ${{ env.LIBCURL_CFLAGS }}
-          LIBCURL_LIBS: ${{ env.LIBCURL_LIBS }}
-          LIBZIP_CFLAGS: ${{ env.LIBZIP_CFLAGS }}
-          LIBZIP_LIBS: ${{ env.LIBZIP_LIBS }}
-        run: |
+      - name: Build idevicesyslog.exe
+	    shell: msys2 {0}
+	    run: |
+	  	env:
+          	LIBCURL_CFLAGS: ${{ env.LIBCURL_CFLAGS }}
+          	LIBCURL_LIBS: ${{ env.LIBCURL_LIBS }}
+          	LIBZIP_CFLAGS: ${{ env.LIBZIP_CFLAGS }}
+          	LIBZIP_LIBS: ${{ env.LIBZIP_LIBS }}
           # 1. Build internal static dependencies
           make -C 3rd_party
           make -C common
