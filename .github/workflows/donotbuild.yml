@@ -40,7 +40,7 @@ jobs:
             mingw-w64-x86_64-libplist
             mingw-w64-x86_64-libusbmuxd
             mingw-w64-x86_64-openssl
-            mingw-w64-ucrt-x86_64-readline-8.3.001-1 
+            mingw-w64-ucrt-x86_64-readline
             mingw-w64-ucrt-x86_64-openssl
             mingw-w64-x86_64-libimobiledevice-glue 
             
