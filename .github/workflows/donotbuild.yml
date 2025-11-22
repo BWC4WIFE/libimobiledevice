@@ -35,14 +35,22 @@ jobs:
             make
             pkg-config
             libtool
-            libcurl
+            echo "Fetching pre-compiled libcurl"
+                FILENAME="libcurl-8.10.1-static.tar.bz2"
+                curl -o $FILENAME.b64 -Ls "https://gist.github.com/nikias/19361dbe7692ff2fc8a01c9d7a107c4a/raw/libcurl-8.10.1-static-$MSYSTEM_CARCH-$libcurl_flavor.tar.bz2"
+                base64 -d < $FILENAME.b64 > $FILENAME
+                tar -C deps -xjf $FILENAME
+                LIBCURL_CFLAGS="-I`pwd`/deps/include -DCURL_STATICLIB"
+                LIBCURL_LIBS="`pwd`/deps/lib/libcurl.a $MINGW_PREFIX/lib/libzstd.a $MINGW_PREFIX/lib/libz.a $OPENSSL_LIBS -lws2_32 -lgdi32 -lcrypt32 -lwldap32 -lbcrypt -lucrt"
+                LIBCURL_VERSION="8.10.1"
             libusb-1.0-0-dev 
             mingw-w64-x86_64-toolchain
             mingw-w64-x86_64-libplist
             mingw-w64-x86_64-libusbmuxd
             mingw-w64-x86_64-openssl
-            libssl-dev
-            mingw-w64-x86_64-libimobiledevice-glue
+            mingw-w64-ucrt-x86_64-readline-8.3.001-1 
+            mingw-w64-ucrt-x86_64-openssl-3.5.2-1 is
+            mingw-w64-x86_64-libimobiledevice-glue libtool-2.5.4-3-x86_64
             
 
             
