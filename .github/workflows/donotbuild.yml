@@ -1,166 +1,166 @@
 name: build
 
-on:
-  push:
-  workflow_dispatch:
-    inputs:
-      reason:
-        description: 'Reason for manual execution'
-        required: false
-        default: 'Manual trigger for Windows build.'
+	on:
+	  push:
+	  workflow_dispatch:
+		inputs:
+		  reason:
+			description: 'Reason for manual execution'
+			required: false
+			default: 'Manual trigger for Windows build.'
 
-jobs:
-  build_idevicesyslog_windows:
-    runs-on: windows-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+	jobs:
+	  build_idevicesyslog_windows:
+		runs-on: windows-latest
+		steps:
+		  - name: Checkout repository
+			uses: actions/checkout@v4
 
-      - name: Setup MSYS2
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: MINGW64
-          install: >
-            git
-            autoconf
-            automake
-            make
-            pkg-config
-            libtool
-            mingw-w64-x86_64-toolchain
-            mingw-w64-x86_64-libplist
-            mingw-w64-x86_64-libusbmuxd
-            mingw-w64-x86_64-openssl
-            mingw-w64-ucrt-x86_64-readline
-            mingw-w64-x86_64-libxml2
-            mingw-w64-x86_64-bzip2
-            base-devel
-            pkgconf
-          update: true
+		  - name: Setup MSYS2
+			uses: msys2/setup-msys2@v2
+			with:
+			  msystem: MINGW64
+			  install: >
+				git
+				autoconf
+				automake
+				make
+				pkg-config
+				libtool
+				mingw-w64-x86_64-toolchain
+				mingw-w64-x86_64-libplist
+				mingw-w64-x86_64-libusbmuxd
+				mingw-w64-x86_64-openssl
+				mingw-w64-ucrt-x86_64-readline
+				mingw-w64-x86_64-libxml2
+				mingw-w64-x86_64-bzip2
+				base-devel
+				pkgconf
+			  update: true
 
-      - name: Setup build environment and dependencies
-        shell: msys2 {0}
-        run: |
-          echo "**** libimobiledevice stack build script for msys2 ****"
-          
-          # Set environment variables based on MSYSTEM
-          export flavor=w64
-          export libcurl_flavor=mingw64
-          export libzip_flavor=mingw64
-          export MINGW_PREFIX="/mingw64"
-          export MSYSTEM_CARCH="x86_64"
-          
-          echo "######## INSTALLING REQUIRED TOOLS AND DEPENDENCIES ########"
-          
-          # Create deps directory
-          mkdir -p deps
-          
-          # Set library paths
-          export OPENSSL_LIBS="$MINGW_PREFIX/lib/libssl.a $MINGW_PREFIX/lib/libcrypto.a -lws2_32 -lgdi32 -lcrypt32"
-          export OPENSSL_CFLAGS="-I$MINGW_PREFIX/include"
-          
-          export READLINE_LIBS="$MINGW_PREFIX/lib/libreadline.a $MINGW_PREFIX/lib/libhistory.a $MINGW_PREFIX/lib/libtermcap.a"
-          export READLINE_CFLAGS="-I$MINGW_PREFIX/include"
-          
-          echo "Fetching pre-compiled libzip"
-          FILENAME="libzip-1.7.1-static.tar.bz2"
-          curl -o $FILENAME.b64 -Ls "https://gist.github.com/nikias/3da15d03120382f87b44029cd8495a02/raw/libzip-1.7.1_static_$MSYSTEM_CARCH-$libzip_flavor.tar.bz2"
-          base64 -d < $FILENAME.b64 > $FILENAME
-          tar -C deps -xjf $FILENAME
-          export LIBZIP_CFLAGS="-I`pwd`/deps/include"
-          export LIBZIP_LIBS="`pwd`/deps/lib/libzip.a $MINGW_PREFIX/lib/libbz2.a $MINGW_PREFIX/lib/liblzma.a $MINGW_PREFIX/lib/libz.a"
-          export LIBZIP_VERSION="1.7.1"
-          
-          echo "Fetching pre-compiled libcurl"
-          FILENAME="libcurl-8.10.1-static.tar.bz2"
-          curl -o $FILENAME.b64 -Ls "https://gist.github.com/nikias/19361dbe7692ff2fc8a01c9d7a107c4a/raw/libcurl-8.10.1-static-$MSYSTEM_CARCH-$libcurl_flavor.tar.bz2"
-          base64 -d < $FILENAME.b64 > $FILENAME
-          tar -C deps -xjf $FILENAME
-          export LIBCURL_CFLAGS="-I`pwd`/deps/include -DCURL_STATICLIB"
-          export LIBCURL_LIBS="`pwd`/deps/lib/libcurl.a $MINGW_PREFIX/lib/libzstd.a $MINGW_PREFIX/lib/libz.a $OPENSSL_LIBS -lws2_32 -lgdi32 -lcrypt32 -lwldap32 -lbcrypt -lucrt"
-          export LIBCURL_VERSION="8.10.1"
+		  - name: Setup build environment and dependencies
+			shell: msys2 {0}
+			run: |
+			  echo "**** libimobiledevice stack build script for msys2 ****"
+			  
+			  # Set environment variables based on MSYSTEM
+			  export flavor=w64
+			  export libcurl_flavor=mingw64
+			  export libzip_flavor=mingw64
+			  export MINGW_PREFIX="/mingw64"
+			  export MSYSTEM_CARCH="x86_64"
+			  
+			  echo "######## INSTALLING REQUIRED TOOLS AND DEPENDENCIES ########"
+			  
+			  # Create deps directory
+			  mkdir -p deps
+			  
+			  # Set library paths
+			  export OPENSSL_LIBS="$MINGW_PREFIX/lib/libssl.a $MINGW_PREFIX/lib/libcrypto.a -lws2_32 -lgdi32 -lcrypt32"
+			  export OPENSSL_CFLAGS="-I$MINGW_PREFIX/include"
+			  
+			  export READLINE_LIBS="$MINGW_PREFIX/lib/libreadline.a $MINGW_PREFIX/lib/libhistory.a $MINGW_PREFIX/lib/libtermcap.a"
+			  export READLINE_CFLAGS="-I$MINGW_PREFIX/include"
+			  
+			  echo "Fetching pre-compiled libzip"
+			  FILENAME="libzip-1.7.1-static.tar.bz2"
+			  curl -o $FILENAME.b64 -Ls "https://gist.github.com/nikias/3da15d03120382f87b44029cd8495a02/raw/libzip-1.7.1_static_$MSYSTEM_CARCH-$libzip_flavor.tar.bz2"
+			  base64 -d < $FILENAME.b64 > $FILENAME
+			  tar -C deps -xjf $FILENAME
+			  export LIBZIP_CFLAGS="-I`pwd`/deps/include"
+			  export LIBZIP_LIBS="`pwd`/deps/lib/libzip.a $MINGW_PREFIX/lib/libbz2.a $MINGW_PREFIX/lib/liblzma.a $MINGW_PREFIX/lib/libz.a"
+			  export LIBZIP_VERSION="1.7.1"
+			  
+			  echo "Fetching pre-compiled libcurl"
+			  FILENAME="libcurl-8.10.1-static.tar.bz2"
+			  curl -o $FILENAME.b64 -Ls "https://gist.github.com/nikias/19361dbe7692ff2fc8a01c9d7a107c4a/raw/libcurl-8.10.1-static-$MSYSTEM_CARCH-$libcurl_flavor.tar.bz2"
+			  base64 -d < $FILENAME.b64 > $FILENAME
+			  tar -C deps -xjf $FILENAME
+			  export LIBCURL_CFLAGS="-I`pwd`/deps/include -DCURL_STATICLIB"
+			  export LIBCURL_LIBS="`pwd`/deps/lib/libcurl.a $MINGW_PREFIX/lib/libzstd.a $MINGW_PREFIX/lib/libz.a $OPENSSL_LIBS -lws2_32 -lgdi32 -lcrypt32 -lwldap32 -lbcrypt -lucrt"
+			  export LIBCURL_VERSION="8.10.1"
 
-      - name: Cache build artifacts
-        id: cache-artifacts
-        uses: actions/cache@v4
-        with:
-          path: |
-            src/.libs
-            common/.libs
-            tools/idevicesyslog.exe
-          key: windows-${{ hashFiles('configure.ac', 'src/Makefile.am', 'tools/Makefile.am') }}
+		  - name: Cache build artifacts
+			id: cache-artifacts
+			uses: actions/cache@v4
+			with:
+			  path: |
+				src/.libs
+				common/.libs
+				tools/idevicesyslog.exe
+			  key: windows-${{ hashFiles('configure.ac', 'src/Makefile.am', 'tools/Makefile.am') }}
 
-      - name: Prepare Autotools build system
-        shell: msys2 {0}
-        run: |
-          ./autogen.sh
+		  - name: Prepare Autotools build system
+			shell: msys2 {0}
+			run: |
+			  ./autogen.sh
 
-      - name: Configure project
-        shell: msys2 {0}
-        env:
-          PKG_CONFIG_PATH: /mingw64/lib/pkgconfig:/mingw64/share/pkgconfig
-          LIBCURL_CFLAGS: ${{ env.LIBCURL_CFLAGS }}
-          LIBCURL_LIBS: ${{ env.LIBCURL_LIBS }}
-          LIBZIP_CFLAGS: ${{ env.LIBZIP_CFLAGS }}
-          LIBZIP_LIBS: ${{ env.LIBZIP_LIBS }}
-          OPENSSL_CFLAGS: ${{ env.OPENSSL_CFLAGS }}
-          OPENSSL_LIBS: ${{ env.OPENSSL_LIBS }}
-          READLINE_CFLAGS: ${{ env.READLINE_CFLAGS }}
-          READLINE_LIBS: ${{ env.READLINE_LIBS }}
-        run: |
-          ./configure --without-cython
-      
-      - name: Build and install libtatsu from release tarball
-        shell: msys2 {0}
-        run: |
-          curl -LO https://github.com/libimobiledevice/libtatsu/releases/download/1.0.5/libtatsu-1.0.5.tar.bz2
-          tar -xjf libtatsu-1.0.5.tar.bz2
-          cd libtatsu-1.0.5
-          ./configure --prefix=/mingw64
-          make
-          make install
-          
-      - name: Build and install libimobiledevice
-        shell: msys2 {0}
-        run: |
-          curl -LO https://github.com/libimobiledevice/libimobiledevice/releases/download/1.4.0/libimobiledevice-1.4.0.tar.bz2
-          tar -xjf libimobiledevice-1.4.0.tar.bz2
-          cd libimobiledevice-1.4.0
-          ./configure --prefix=/mingw64
-          make
-          make install 
+		  - name: Configure project
+			shell: msys2 {0}
+			env:
+			  PKG_CONFIG_PATH: /mingw64/lib/pkgconfig:/mingw64/share/pkgconfig
+			  LIBCURL_CFLAGS: ${{ env.LIBCURL_CFLAGS }}
+			  LIBCURL_LIBS: ${{ env.LIBCURL_LIBS }}
+			  LIBZIP_CFLAGS: ${{ env.LIBZIP_CFLAGS }}
+			  LIBZIP_LIBS: ${{ env.LIBZIP_LIBS }}
+			  OPENSSL_CFLAGS: ${{ env.OPENSSL_CFLAGS }}
+			  OPENSSL_LIBS: ${{ env.OPENSSL_LIBS }}
+			  READLINE_CFLAGS: ${{ env.READLINE_CFLAGS }}
+			  READLINE_LIBS: ${{ env.READLINE_LIBS }}
+			run: |
+			  ./configure --without-cython
+		  
+		  - name: Build and install libtatsu from release tarball
+			shell: msys2 {0}
+			run: |
+			  curl -LO https://github.com/libimobiledevice/libtatsu/releases/download/1.0.5/libtatsu-1.0.5.tar.bz2
+			  tar -xjf libtatsu-1.0.5.tar.bz2
+			  cd libtatsu-1.0.5
+			  ./configure --prefix=/mingw64
+			  make
+			  make install
+			  
+		  - name: Build and install libimobiledevice
+			shell: msys2 {0}
+			run: |
+			  curl -LO https://github.com/libimobiledevice/libimobiledevice/releases/download/1.4.0/libimobiledevice-1.4.0.tar.bz2
+			  tar -xjf libimobiledevice-1.4.0.tar.bz2
+			  cd libimobiledevice-1.4.0
+			  ./configure --prefix=/mingw64
+			  make
+			  make install 
 
 
 
-      - name: Build idevicesyslog.exe
-	    shell: msys2 {0}
-	    run: |
-	  	env:
-          	LIBCURL_CFLAGS: ${{ env.LIBCURL_CFLAGS }}
-          	LIBCURL_LIBS: ${{ env.LIBCURL_LIBS }}
-          	LIBZIP_CFLAGS: ${{ env.LIBZIP_CFLAGS }}
-          	LIBZIP_LIBS: ${{ env.LIBZIP_LIBS }}
-          # 1. Build internal static dependencies
-          make -C 3rd_party
-          make -C common
-          
-          # 2. Build the main library (required for linking tools)
-          make -C src
-          
-          # 3. Build ONLY idevicesyslog in the tools directory
-          # -C changes directory to 'tools'
-          # targeting 'idevicesyslog.exe' explicitly skips building other broken tools
-          make -C tools idevicesyslog.exe
+		- name: Build idevicesyslog.exe
+		  shell: msys2 {0}
+		  env:
+				LIBCURL_CFLAGS: ${{ env.LIBCURL_CFLAGS }}
+				LIBCURL_LIBS: ${{ env.LIBCURL_LIBS }}
+				LIBZIP_CFLAGS: ${{ env.LIBZIP_CFLAGS }}
+				LIBZIP_LIBS: ${{ env.LIBZIP_LIBS }}
+			run: |
+			  # 1. Build internal static dependencies
+			  make -C 3rd_party
+			  make -C common
+			  
+			  # 2. Build the main library (required for linking tools)
+			  make -C src
+			  
+			  # 3. Build ONLY idevicesyslog in the tools directory
+			  # -C changes directory to 'tools'
+			  # targeting 'idevicesyslog.exe' explicitly skips building other broken tools
+			  make -C tools idevicesyslog.exe
 
-      - name: Verify build artifact location
-        shell: bash
-        run: |
-          echo "The executable is built at: tools/idevicesyslog.exe"
-          ls -l tools/idevicesyslog.exe
+		  - name: Verify build artifact location
+			shell: bash
+			run: |
+			  echo "The executable is built at: tools/idevicesyslog.exe"
+			  ls -l tools/idevicesyslog.exe
 
-      - name: Upload executable artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: idevicesyslog-executable-windows
-          path: tools/idevicesyslog.exe
-          retention-days: 5
+		  - name: Upload executable artifact
+			uses: actions/upload-artifact@v4
+			with:
+			  name: idevicesyslog-executable-windows
+			  path: tools/idevicesyslog.exe
+			  retention-days: 5
